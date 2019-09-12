@@ -1,7 +1,6 @@
 package lambda
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/sns"
@@ -9,15 +8,24 @@ import (
 )
 
 type mockedSnsPublish struct {
-	Client snsiface.SNSAPI
-	Resp   sns.PublishOutput
+	snsiface.SNSAPI
+	In   *sns.PublishInput
+	Resp sns.PublishOutput
+}
+
+func (m mockedSnsPublish) Publish(in *sns.PublishInput) (*sns.PublishOutput, error) {
+	*m.In = *in
+	return &m.Resp, nil
 }
 
 func TestLambdaHandler(t *testing.T) {
-	var input map[string]interface{}
-	json.Unmarshal([]byte("{\"foo\":\"bar\"}"), &input)
+	var argument = sns.PublishInput{}
+	client := mockedSnsPublish{Resp: sns.PublishOutput{}, In: &argument}
 	svc := SNS{
-		Client: mockedSnsPublish{},
+		Client: client,
 	}
-	svc.PublishMessage(input)
+	svc.PublishMessage("{\"foo\":\"bar\"}")
+	if *argument.Message != "{\"foo\":\"bar\",\"platform\":\"farmroad\"}" {
+		t.Error("Wrong message")
+	}
 }
