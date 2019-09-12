@@ -18,7 +18,7 @@ func (m mockedSnsPublish) Publish(in *sns.PublishInput) (*sns.PublishOutput, err
 	return &m.Resp, nil
 }
 
-func TestLambdaHandler(t *testing.T) {
+func TestLambdaHandlerNormalMessage(t *testing.T) {
 	var argument = sns.PublishInput{}
 	client := mockedSnsPublish{Resp: sns.PublishOutput{}, In: &argument}
 	svc := SNS{
@@ -27,5 +27,29 @@ func TestLambdaHandler(t *testing.T) {
 	svc.PublishMessage("{\"foo\":\"bar\"}")
 	if *argument.Message != "{\"foo\":\"bar\",\"platform\":\"farmroad\"}" {
 		t.Error("Wrong message")
+	}
+}
+
+func TestLambdaHandlerEmptyJsonMessage(t *testing.T) {
+	var argument = sns.PublishInput{}
+	client := mockedSnsPublish{Resp: sns.PublishOutput{}, In: &argument}
+	svc := SNS{
+		Client: client,
+	}
+	svc.PublishMessage("{}")
+	if *argument.Message != "{\"platform\":\"farmroad\"}" {
+		t.Error("Wrong message")
+	}
+}
+
+func TestLambdaHandlerNonJsonMessage(t *testing.T) {
+	var argument = sns.PublishInput{}
+	client := mockedSnsPublish{Resp: sns.PublishOutput{}, In: &argument}
+	svc := SNS{
+		Client: client,
+	}
+	_, err := svc.PublishMessage(" ")
+	if err == nil {
+		t.Error("Expected error")
 	}
 }

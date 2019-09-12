@@ -29,7 +29,7 @@ func HandleRequest(ctx context.Context, snsEvent events.SNSEvent) (string, error
 
 	result, err := svc.PublishMessage(snsEvent.Records[0].SNS.Message)
 	if err != nil {
-		panic(err.Error())
+		return "Error when publishing message", err
 	}
 
 	return *result.MessageId, nil
@@ -39,14 +39,14 @@ func (s *SNS) PublishMessage(jsonMessage string) (*sns.PublishOutput, error) {
 	var message map[string]interface{}
 	err := json.Unmarshal([]byte(jsonMessage), &message)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
 	message["platform"] = "farmroad"
 
 	payload, err := json.Marshal(message)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 	return s.Client.Publish(&sns.PublishInput{
 		Message:  aws.String(string(payload)),
